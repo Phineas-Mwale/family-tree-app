@@ -1,12 +1,6 @@
-export class CreatePersonDto {
-  familyId: string;
-  firstName: string;
-  lastName?: string;
-  displayName?: string;
-  birthDate?: string;
-  isLiving?: boolean;
-}
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class PeopleService {
   private people = [
     {
@@ -33,7 +27,14 @@ export class PeopleService {
     return this.people.filter((person) => person.familyId === familyId);
   }
 
-  createPerson(dto: CreatePersonDto) {
+  createPerson(dto: {
+    familyId: string;
+    firstName: string;
+    lastName?: string;
+    displayName?: string;
+    birthDate?: string;
+    isLiving?: boolean;
+  }) {
     const person = {
       id: `person_${Date.now()}`,
       familyId: dto.familyId,

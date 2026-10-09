@@ -1,11 +1,6 @@
-export class CreateRelationshipDto {
-  familyId: string;
-  personAId: string;
-  personBId: string;
-  relationType: 'PARENT_OF' | 'CHILD_OF' | 'SPOUSE_OF' | 'SIBLING_OF';
-  notes?: string;
-}
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class RelationshipsService {
   private relationships = [
     {
@@ -22,7 +17,13 @@ export class RelationshipsService {
     return this.relationships.filter((relationship) => relationship.familyId === familyId);
   }
 
-  createRelationship(dto: CreateRelationshipDto) {
+  createRelationship(dto: {
+    familyId: string;
+    personAId: string;
+    personBId: string;
+    relationType: 'PARENT_OF' | 'CHILD_OF' | 'SPOUSE_OF' | 'SIBLING_OF';
+    notes?: string;
+  }) {
     const relationship = {
       id: `rel_${Date.now()}`,
       familyId: dto.familyId,

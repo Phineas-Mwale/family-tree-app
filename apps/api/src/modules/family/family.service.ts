@@ -1,3 +1,4 @@
+@Injectable()
 export class FamilyService {
   private families = [
     {

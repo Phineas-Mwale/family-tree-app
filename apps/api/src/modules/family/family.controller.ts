@@ -12,7 +12,7 @@ export class FamilyController {
   }
 
   @Get(':id')
-  getFamilyById(@Param('id') string) {
+  getFamilyById(@Param('id') id: string) {
     return this.familyService.getFamilyById(id);
   }
 
