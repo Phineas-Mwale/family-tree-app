@@ -1,0 +1,35 @@
+# See https://help.github.com/articles/ignoring-files/for-more-information-about-gitignore/
+
+# Dependencies
+node_modules/
+/.pnp
+.pnp.js
+
+# Build outputs
+.next/
+out/
+build/
+dist/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Prisma
+tmp/
+
+# Mobile
+.expo/
+.expo-shared/
+android/
+ios/

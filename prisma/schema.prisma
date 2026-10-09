@@ -1,0 +1,307 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String?
+  authProvider  String   @default("email")
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  status        UserStatus @default(ACTIVE)
+
+  memberships FamilyMembership[]
+  createdFamilies Family[] @relation("FamilyFounder")
+  auditLogs AuditLog[]
+  stories Story[]
+  media MediaAsset[]
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  BLOCKED
+}
+
+model Family {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  founderId   String
+  founder     User     @relation("FamilyFounder", fields: [founderId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships FamilyMembership[]
+  people Person[]
+  stories Story[]
+  locations Location[]
+  invitations Invitation[]
+  audits AuditLog[]
+  media MediaAsset[]
+  surnameRecords SurnameRecord[]
+}
+
+model FamilyMembership {
+  id        String   @id @default(cuid())
+  familyId  String
+  family    Family    @relation(fields: [familyId], references: [id])
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  personId  String?
+  person    Person?   @relation(fields: [personId], references: [id])
+  role      MembershipRole @default(MEMBER)
+  status    MembershipStatus @default(ACTIVE)
+  invitedBy String?
+  joinedAt  DateTime @default(now())
+
+  @@unique([familyId, userId])
+}
+
+enum MembershipRole {
+  FOUNDER
+  ADMIN
+  MEMBER
+  YOUTH
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INVITED
+  PENDING
+  DECLINED
+}
+
+model Person {
+  id                 String      @id @default(cuid())
+  familyId           String
+  family             Family      @relation(fields: [familyId], references: [id])
+  firstName          String
+  middleName         String?
+  lastName           String?
+  maidenName         String?
+  displayName        String
+  gender             String?
+  birthDate          DateTime?
+  deathDate          DateTime?
+  isLiving           Boolean     @default(true)
+  profileVisibility  ProfileVisibility @default(FAMILY)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  memberships FamilyMembership[]
+  aliases PersonAlias[]
+  relationshipsA PersonRelationship[] @relation("PersonA")
+  relationshipsB PersonRelationship[] @relation("PersonB")
+  locations PersonLocation[]
+  stories Story[]
+  media MediaAsset[]
+  privacy Prefs[]
+}
+
+enum ProfileVisibility {
+  FAMILY
+  ADMIN_ONLY
+  PRIVATE
+}
+
+model PersonAlias {
+  id         String   @id @default(cuid())
+  personId   String
+  person     Person   @relation(fields: [personId], references: [id])
+  fullName   String
+  type       String
+  validFrom  DateTime?
+  validTo    DateTime?
+  createdAt  DateTime @default(now())
+}
+
+model PersonRelationship {
+  id            String   @id @default(cuid())
+  familyId      String
+  personAId     String
+  personBId     String
+  relationType  RelationshipType
+  isActive      Boolean  @default(true)
+  notes         String?
+  certainty     Float?   @default(1.0)
+  createdBy     String?
+  createdAt     DateTime @default(now())
+
+  personA Person @relation("PersonA", fields: [personAId], references: [id])
+  personB Person @relation("PersonB", fields: [personBId], references: [id])
+}
+
+enum RelationshipType {
+  PARENT_OF
+  CHILD_OF
+  SPOUSE_OF
+  SIBLING_OF
+  HALF_SIBLING_OF
+  STEP_PARENT_OF
+  STEP_CHILD_OF
+  ADOPTED_CHILD_OF
+  GRANDPARENT_OF
+  AUNT_UNCLE_OF
+  COUSIN_OF
+  PARTNER_OF
+}
+
+model Prefs {
+  id                    String   @id @default(cuid())
+  personId              String
+  person                Person   @relation(fields: [personId], references: [id])
+  birthDateVisibility   VisibilityLevel @default(FAMILY)
+  exactLocationVisibility VisibilityLevel @default(PRIVATE)
+  cityLevelVisibility    VisibilityLevel @default(FAMILY)
+  contactVisibility      VisibilityLevel @default(PRIVATE)
+  updatedAt             DateTime @updatedAt
+}
+
+enum VisibilityLevel {
+  PUBLIC
+  FAMILY
+  ADMIN_ONLY
+  PRIVATE
+}
+
+model Location {
+  id            String   @id @default(cuid())
+  familyId      String
+  family        Family   @relation(fields: [familyId], references: [id])
+  name          String
+  country       String?
+  state         String?
+  city          String?
+  latitude      Float?
+  longitude     Float?
+  geocodeSource String?
+  locationType  LocationType
+  createdAt     DateTime @default(now())
+
+  personLinks PersonLocation[]
+}
+
+enum LocationType {
+  CURRENT_HOME
+  BIRTH_PLACE
+  CHILDHOOD_HOME
+  ANCESTRAL_HOME
+  HISTORICAL
+}
+
+model PersonLocation {
+  id             String   @id @default(cuid())
+  personId       String
+  person         Person   @relation(fields: [personId], references: [id])
+  locationId     String
+  location       Location @relation(fields: [locationId], references: [id])
+  residencyType  String
+  startDate      DateTime?
+  endDate        DateTime?
+  privacyLevel   VisibilityLevel @default(FAMILY)
+  isCurrent      Boolean @default(false)
+  notes          String?
+}
+
+model Story {
+  id          String   @id @default(cuid())
+  familyId    String
+  family      Family   @relation(fields: [familyId], references: [id])
+  personId    String?
+  person      Person?  @relation(fields: [personId], references: [id])
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  title       String
+  body        String
+  storyType   StoryType
+  createdAt   DateTime @default(now())
+  publishedAt DateTime?
+
+  media MediaAsset[]
+}
+
+enum StoryType {
+  MEMORY
+  TIMELINE_EVENT
+  TRADITION
+  BIOGRAPHY
+  ORAL_HISTORY
+}
+
+model MediaAsset {
+  id          String   @id @default(cuid())
+  familyId    String
+  family      Family   @relation(fields: [familyId], references: [id])
+  personId    String?
+  person      Person?  @relation(fields: [personId], references: [id])
+  storyId     String?
+  story       Story?   @relation(fields: [storyId], references: [id])
+  uploadedById String
+  uploadedBy  User     @relation(fields: [uploadedById], references: [id])
+  storageKey  String
+  mimeType    String
+  fileSize    Int?
+  thumbnailKey String?
+  createdAt   DateTime @default(now())
+}
+
+model Invitation {
+  id          String   @id @default(cuid())
+  familyId    String
+  family      Family   @relation(fields: [familyId], references: [id])
+  createdBy   String
+  code        String   @unique
+  type        InviteType
+  expiresAt   DateTime?
+  usedByUserId String?
+  status      InviteStatus @default(ACTIVE)
+  createdAt   DateTime @default(now())
+}
+
+enum InviteType {
+  FAMILY_CODE
+  MAGIC_LINK
+  QR_CODE
+}
+
+enum InviteStatus {
+  ACTIVE
+  USED
+  EXPIRED
+  CANCELLED
+}
+
+model SurnameRecord {
+  id             String   @id @default(cuid())
+  familyId       String
+  family         Family   @relation(fields: [familyId], references: [id])
+  surname        String
+  originCountry  String?
+  meaning        String?
+  etymology      String?
+  historicalNotes String?
+  sourceReference String?
+  confidence     Float?
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  familyId    String
+  family      Family   @relation(fields: [familyId], references: [id])
+  entityType  String
+  entityId    String
+  action      String
+  actorUserId String
+  actor       User     @relation(fields: [actorUserId], references: [id])
+  before      String?
+  after       String?
+  createdAt   DateTime @default(now())
+}
